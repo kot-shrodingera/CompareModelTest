@@ -3,6 +3,7 @@
 TableModel::TableModel(QObject *parent)
   : QAbstractTableModel(parent)
 {
+
 }
 
 int TableModel::rowCount([[maybe_unused]] const QModelIndex &parent) const

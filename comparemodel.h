@@ -6,7 +6,7 @@ class CompareModel : public QAbstractTableModel
 {
   Q_OBJECT
 public:
-  CompareModel(QList<QAbstractTableModel*> tableModelList,
+  CompareModel(const QList<QAbstractTableModel*> &tableModelList,
                QObject *parent = nullptr);
 
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -22,9 +22,9 @@ public:
 private:
 
   QList<QList<QString>> m_parameterList = {{"Value", "Value"}};
-  QList<QPair<QString, QVector<int>>> m_pointList;
-  //          kks       rows
-  QMap<QString, int> m_kksToIndex;
+  QList<QPair<QString, QVector<int>>*> m_pointList;
+  //                   kks       rows
+  QMap<QString, QPair<QString, QVector<int>>*> m_pointByKks;
 
   QList<QAbstractTableModel*> m_tableModelList;
 };

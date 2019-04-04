@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-CompareModel::CompareModel(QList<QAbstractTableModel*> tableModelList,
+CompareModel::CompareModel(const QList<QAbstractTableModel*> &tableModelList,
                            QObject *parent)
   : QAbstractTableModel(parent),
     m_tableModelList(tableModelList)
@@ -42,12 +42,12 @@ QVariant CompareModel::data(const QModelIndex &index, int role) const
     auto row = index.row();
     auto column = index.column();
     if (column == 0) {
-      return m_pointList[row].first;
+      return m_pointList[row]->first;
     } else {
       int parameterNumber = (column - 1) / m_tableModelList.size();
       int modelNumber = (column - 1) % m_tableModelList.size();
       auto model = m_tableModelList.at(modelNumber);
-      auto modelRow = m_pointList[row].second[modelNumber];
+      auto modelRow = m_pointList[row]->second[modelNumber];
       auto modelColumn = [model]() {
         QStringList headers;
         for (int i = 0; i < model->columnCount(); ++i) {
@@ -69,22 +69,24 @@ void CompareModel::RunComparition()
       modelNumber < m_tableModelList.size();
       ++modelNumber) {
     auto model = m_tableModelList[modelNumber];
-    for (int row = 0; row < model->rowCount(); ++row) {
+    auto rowCount = model->rowCount();
+    for (int row = 0; row < rowCount; ++row) {
       auto kksIndex = model->index(row, 0);
-      qDebug() << kksIndex;
       auto kks = model->data(kksIndex).toString();
-      if (!m_kksToIndex.contains(kks)) {
-        m_kksToIndex.insert(kks, m_pointList.size());
-        m_pointList.append({kks, QVector<int>(m_tableModelList.size(), -1)});
-        m_pointList.last().second[modelNumber] = row;
+      if (!m_pointByKks.contains(kks)) {
+        auto data = new QPair<QString, QVector<int>>
+            (kks, QVector<int>(m_tableModelList.size(), -1));
+        m_pointList.append(data);
+        m_pointList.last()->second[modelNumber] = row;
+        m_pointByKks.insert(kks, m_pointList.last());
       } else {
-        m_pointList[m_kksToIndex[kks]].second[modelNumber] = row;
+        m_pointByKks[kks]->second[modelNumber] = row;
       }
     }
   }
   for (int i = 0; i < m_pointList.size();) {
-    auto kks = m_pointList[i].first;
-    auto rows = m_pointList[i].second;
+    auto kks = m_pointList[i]->first;
+    auto rows = m_pointList[i]->second;
     int existingRowsCount = 0;
     for (auto row : rows) {
       if (row != -1) {
@@ -95,8 +97,8 @@ void CompareModel::RunComparition()
         goto skipRemove;
       }
     }
-    m_pointList.removeAt(m_kksToIndex.value(kks));
-    m_kksToIndex.remove(kks);
+    m_pointList.removeOne(m_pointByKks[kks]);
+    m_pointByKks.remove(kks);
     skipRemove:;
   }
   endResetModel();
